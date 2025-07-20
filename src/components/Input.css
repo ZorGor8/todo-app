@@ -1,0 +1,14 @@
+.input {
+   padding: 10px 15px;
+   border: 1px solid #ccc;
+   border-radius: 5px;
+   font-size: 16px;
+   width: 100%; /* Занимает всю доступную ширину */
+   box-sizing: border-box; /* Учитываем padding и border в общей ширине */
+ }
+ 
+ .input:focus {
+   outline: none;
+   border-color: #007bff;
+   box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+ }
