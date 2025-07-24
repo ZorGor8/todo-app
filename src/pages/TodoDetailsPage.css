@@ -1,0 +1,128 @@
+/* src/pages/TodoDetailsPage.css */
+.todo-details-container {
+   background-color: #f9f9f9;
+   padding: 30px;
+   border-radius: 10px;
+   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+   max-width: 600px;
+   margin: 40px auto;
+   text-align: center;
+}
+
+.todo-details-container h1 {
+   color: #333;
+   margin-bottom: 20px;
+   font-size: 2em;
+}
+
+.todo-details-container p {
+   font-size: 1.1em;
+   margin-bottom: 10px;
+   color: #555;
+}
+
+.todo-details-container strong {
+   color: #007bff;
+}
+
+.back-link {
+   display: inline-block;
+   margin-top: 30px;
+   padding: 10px 20px;
+   background-color: #007bff;
+   color: white;
+   text-decoration: none;
+   border-radius: 5px;
+   transition: background-color 0.3s ease;
+}
+
+.back-link:hover {
+   background-color: #0056b3;
+}
+
+/* src/pages/ToDoPage.css */
+
+/* ... все остальные стили ... */
+
+/* Стили для ссылки на детали задачи */
+.todo-link {
+   color: inherit; /* Наследует цвет текста родителя */
+   text-decoration: none; /* Убирает подчеркивание */
+   cursor: pointer; /* Показывает, что это кликабельно */
+   display: inline-block; /* Для корректной работы doubleClick */
+   width: calc(100% - 200px); /* Чтобы занимал место и можно было кликнуть */
+   text-align: left; /* Выравнивание текста */
+}
+
+.todo-link:hover {
+   text-decoration: underline; /* Подчеркивание при наведении */
+}
+
+/* Чтобы doubleClick работал, возможно, придется убрать его с Link и оставить только на span */
+/* Или, если Link обернут в span, то onDoubleClick на span будет работать */
+/* Давайте оставим onDoubleClick на span, а Link будет внутри него */
+/*
+<span className="todo-text" onDoubleClick={() => handleEditClick(todo)}>
+   <Link to={`/todo/${todo.id}`} className="todo-link">
+       {todo.text}
+   </Link>
+</span>
+*/
+/* Если вы хотите, чтобы двойной клик работал по всему span, а не только по ссылке,
+  то onDoubleClick должен быть на span, а Link внутри него.
+  Если Link занимает весь span, то doubleClick по Link будет работать.
+  В текущем коде onDoubleClick на span, а Link внутри. Это должно работать.
+*/
+
+/* src/pages/TodoDetailsPage.css */
+
+/* ... существующие стили ... */
+
+/* Стили для хлебных крошек (Breadcrumbs) */
+.breadcrumbs {
+   margin-bottom: 25px;
+   font-size: 0.9em;
+   color: #666;
+   text-align: left; /* Выравнивание по левому краю */
+}
+
+.breadcrumb-link {
+   color: #007bff;
+   text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+   text-decoration: underline;
+}
+
+.breadcrumb-separator {
+   margin: 0 5px;
+}
+
+.breadcrumb-current {
+   color: #333;
+   font-weight: bold;
+}
+/* src/pages/TodoDetailsPage.css */
+
+/* ... существующие стили ... */
+
+/* Стили для кнопки "Вернуться назад" */
+.back-button {
+   display: inline-block;
+   margin-top: 30px;
+   padding: 10px 20px;
+   background-color: #6c757d; /* Серый цвет */
+   color: white;
+   border: none;
+   border-radius: 5px;
+   cursor: pointer;
+   transition: background-color 0.3s ease;
+   font-size: 1em;
+}
+
+.back-button:hover {
+   background-color: #5a6268;
+}
+
+

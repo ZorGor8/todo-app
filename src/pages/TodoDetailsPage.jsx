@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import './ToDoPage.css';
-import { Link } from 'react-router-dom'; // Убедитесь, что Link импортирован
+import { Link } from 'react-router-dom'; // Импортируем Link для навигации к деталям
 
 const ToDoPage = () => {
   // Инициализация состояния todos из localStorage.
@@ -10,10 +10,8 @@ const ToDoPage = () => {
   const [todos, setTodos] = useState(() => {
     try {
       const storedTodos = localStorage.getItem('todos');
-      // Если есть сохраненные данные, парсим их; иначе возвращаем пустой массив.
       return storedTodos ? JSON.parse(storedTodos) : [];
     } catch (error) {
-      // В случае ошибки при чтении или парсинге localStorage, выводим ошибку и возвращаем пустой массив.
       console.error("Failed to load todos from localStorage", error);
       return [];
     }
@@ -22,18 +20,15 @@ const ToDoPage = () => {
   const [newTodoText, setNewTodoText] = useState('');
   const [editingTodoId, setEditingTodoId] = useState(null);
   const [editingText, setEditingText] = useState('');
-  // Состояние для управления видимостью и текстом уведомления
   const [notification, setNotification] = useState({ message: '', visible: false });
-  // Состояние для хранения текущего фильтра ('all', 'active', 'completed')
   const [filter, setFilter] = useState('all');
 
 
   // useEffect для СОХРАНЕНИЯ в localStorage.
   // Этот эффект срабатывает при каждом изменении массива 'todos'.
   useEffect(() => {
-    // Сохраняем текущий массив 'todos' в localStorage, предварительно преобразовав его в JSON строку.
     localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]); // Зависимость: эффект выполняется только при изменении 'todos'.
+  }, [todos]);
 
 
   // Функция для отображения уведомлений
@@ -41,7 +36,7 @@ const ToDoPage = () => {
     setNotification({ message, visible: true });
     setTimeout(() => {
       setNotification({ message: '', visible: false });
-    }, 2000); // Уведомление исчезнет через 2 секунды (2000 миллисекунд)
+    }, 2000);
   };
 
 
@@ -56,7 +51,7 @@ const ToDoPage = () => {
     };
     setTodos([...todos, newTodo]);
     setNewTodoText('');
-    showNotification('Задача добавлена!'); // Вызов уведомления
+    showNotification('Задача добавлена!');
   };
 
   // Обработчик переключения статуса задачи (выполнена/не выполнена)
@@ -68,17 +63,20 @@ const ToDoPage = () => {
 
   // Обработчик удаления задачи с анимацией
   const handleDeleteTodo = (idToDelete) => {
+      // Ищем элемент LI по его ID, который мы добавили в JSX
       const todoToDeleteElement = document.getElementById(`todo-item-${idToDelete}`);
 
       if (todoToDeleteElement) {
-          todoToDeleteElement.classList.add('fade-out'); // Добавляем класс для анимации исчезновения
+          // Если элемент найден, добавляем класс для начала анимации исчезновения
+          todoToDeleteElement.classList.add('fade-out');
 
+          // Удаляем задачу из состояния после завершения анимации
           setTimeout(() => {
-              setTodos(todos.filter(todo => todo.id !== idToDelete)); // Удаляем из состояния после анимации
+              setTodos(todos.filter(todo => todo.id !== idToDelete));
               showNotification('Задача удалена!');
-          }, 300); // Время должно совпадать с длительностью CSS transition/animation
+          }, 300); // Длительность должна совпадать с длительностью CSS-анимации
       } else {
-          // Если элемент не найден (на всякий случай), просто удаляем
+          // Если по какой-то причине элемент не найден, просто удаляем задачу без анимации
           setTodos(todos.filter(todo => todo.id !== idToDelete));
           showNotification('Задача удалена!');
       }
@@ -92,8 +90,8 @@ const ToDoPage = () => {
 
   const handleSaveEdit = (id) => {
     if (editingText.trim() === '') {
-      handleDeleteTodo(id);
-      showNotification('Задача удалена (пустой текст)!'); // Вызов уведомления (если удаляется)
+      handleDeleteTodo(id); // Если текст пуст, удаляем задачу
+      showNotification('Задача удалена (пустой текст)!');
       return;
     }
     setTodos(todos.map(todo =>
@@ -101,7 +99,7 @@ const ToDoPage = () => {
     ));
     setEditingTodoId(null);
     setEditingText('');
-    showNotification('Задача обновлена!'); // Вызов уведомления
+    showNotification('Задача обновлена!');
   };
 
   const handleCancelEdit = () => {
@@ -111,11 +109,9 @@ const ToDoPage = () => {
 
   // Обработчик для удаления всех выполненных задач
   const handleClearCompleted = () => {
-    // Обновляем состояние todos, оставляя только те задачи, которые НЕ выполнены
     const activeTodos = todos.filter(todo => !todo.completed);
     setTodos(activeTodos);
-    // Показываем уведомление, если были удалены задачи
-    if (todos.length > activeTodos.length) {
+    if (todos.length > activeTodos.length) { // Показываем уведомление, только если что-то было удалено
       showNotification('Выполненные задачи очищены!');
     }
   };
@@ -124,12 +120,12 @@ const ToDoPage = () => {
   // Вычисляемые задачи для отображения в зависимости от текущего фильтра
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') {
-      return !todo.completed; // Возвращаем только невыполненные задачи
+      return !todo.completed;
     }
     if (filter === 'completed') {
-      return todo.completed; // Возвращаем только выполненные задачи
+      return todo.completed;
     }
-    return true; // Если filter === 'all', возвращаем все задачи
+    return true; // filter === 'all'
   });
 
 
@@ -144,6 +140,7 @@ const ToDoPage = () => {
         </div>
       )}
 
+      {/* Секция для ввода новой задачи */}
       <div className="todo-input-section">
         <Input
           value={newTodoText}
@@ -151,7 +148,8 @@ const ToDoPage = () => {
           placeholder="Добавить новую задачу..."
           className="todo-input"
         />
-        <Button onClick={handleAddTodo} className="add-todo-button" type="button"> {/* <-- ИСПРАВЛЕНО: ДОБАВЛЕН type="button" */}
+        {/* Кнопка "Добавить" с type="button" для предотвращения перезагрузки страницы */}
+        <Button onClick={handleAddTodo} className="add-todo-button" type="button">
           Добавить
         </Button>
       </div>
@@ -161,36 +159,36 @@ const ToDoPage = () => {
         <Button
           onClick={() => setFilter('all')}
           className={filter === 'all' ? 'filter-button active' : 'filter-button'}
-          type="button" // Добавлено
+          type="button" // Всегда используем type="button" для кнопок, не являющихся submit
         >
           Все
         </Button>
         <Button
           onClick={() => setFilter('active')}
           className={filter === 'active' ? 'filter-button active' : 'filter-button'}
-          type="button" // Добавлено
+          type="button"
         >
           Активные
         </Button>
         <Button
           onClick={() => setFilter('completed')}
           className={filter === 'completed' ? 'filter-button active' : 'filter-button'}
-          type="button" // Добавлено
+          type="button"
         >
           Выполненные
         </Button>
       </div>
 
       {/* Кнопка очистки завершенных задач */}
-      {/* Отображаем кнопку только если есть хотя бы одна задача в общем списке */}
-      {todos.length > 0 && (
+      {todos.length > 0 && ( // Отображаем кнопку только если есть хотя бы одна задача
         <div className="clear-completed-section">
-          <Button onClick={handleClearCompleted} className="clear-completed-button" type="button"> {/* Добавлено */}
+          <Button onClick={handleClearCompleted} className="clear-completed-button" type="button">
             Очистить завершенные
           </Button>
         </div>
       )}
 
+      {/* Список задач */}
       <ul className="todo-list">
         {/* Отображение сообщений в зависимости от фильтра и количества задач */}
         {filteredTodos.length === 0 && filter === 'all' ? (
@@ -204,7 +202,7 @@ const ToDoPage = () => {
           filteredTodos.map(todo => (
             <li
               key={todo.id}
-              id={`todo-item-${todo.id}`} // <-- ИСПРАВЛЕНО: ДОБАВЛЕН ID ДЛЯ АНИМАЦИИ УДАЛЕНИЯ
+              id={`todo-item-${todo.id}`} // Важно: добавляем ID для работы анимации удаления
               className={`todo-item ${todo.completed ? 'completed' : ''}`}
             >
               <input
@@ -233,11 +231,13 @@ const ToDoPage = () => {
               ) : (
                 // Обычный режим отображения
                 <>
-                  <span className="todo-text" onDoubleClick={() => handleEditClick(todo)}> {/* doubleClick оставлен здесь */}
-                      <Link to={`/todo/${todo.id}`} className="todo-link"> {/* Link для перехода на детали */}
+                  {/* Текст задачи, который является ссылкой на страницу деталей */}
+                  <span className="todo-text" onDoubleClick={() => handleEditClick(todo)}>
+                      <Link to={`/todo/${todo.id}`} className="todo-link">
                           {todo.text}
                       </Link>
                   </span>
+                  {/* Кнопки "Редактировать" и "Удалить" */}
                   <Button onClick={() => handleEditClick(todo)} className="edit-todo-button" type="button">
                     Редактировать
                   </Button>
