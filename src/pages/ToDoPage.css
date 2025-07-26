@@ -279,3 +279,62 @@ h1 {
       transform: translateY(0);
   }
 }
+
+
+
+/* src/pages/ToDoPage.css */
+
+/* ... все ваши предыдущие стили ... */
+
+/* Стили для ручки перетаскивания (drag handle) */
+.drag-handle {
+  cursor: grab; /* Курсор "хватательная рука" */
+  margin-left: 10px; /* Отступ от текста задачи */
+  padding: 5px; /* Для удобства клика */
+  font-size: 1.5em; /* Размер точек */
+  line-height: 0.5; /* Выравнивание по центру */
+  color: #ccc; /* Цвет точек */
+  transition: color 0.2s ease;
+  display: flex; /* Для выравнивания */
+  align-items: center; /* Выравнивание по вертикали */
+}
+
+.drag-handle:hover {
+  color: #888; /* Изменение цвета при наведении */
+}
+
+/* Когда элемент активно перетаскивается, курсор меняется на grabbing */
+.todo-item[data-dragging="true"] .drag-handle {
+  cursor: grabbing;
+}
+
+/* Дополнительные стили для перетаскиваемого элемента (когда он активен) */
+/* Эти стили применяются к li[data-dragging="true"] */
+.todo-item[data-dragging="true"] {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+}
+
+/* Стили для области Droppable (списка ul), когда над ней находится перетаскиваемый элемент */
+/* Эти стили применяются к ul[data-drop-active="true"] */
+.todo-list[data-drop-active="true"] {
+  background-color: var(--primary-bg);
+  border: 2px dashed var(--button-primary-bg);
+  border-radius: 10px;
+  padding: 5px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
