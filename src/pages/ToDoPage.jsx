@@ -18,29 +18,27 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   arrayMove, // Утилита для перемещения элементов в массиве
+  verticalListSortingStrategy, // Стратегия для вертикальной сортировки
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities'; // Для трансформаций CSS
 
-// --- Новый компонент SortableItem для каждого элемента списка ---
-// Этот компонент делает каждый li перетаскиваемым и сортируемым
-const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEditClick, editingTodoId, editingText, handleSaveEdit, handleCancelEdit }) => {
+// --- Компонент SortableItem для каждого элемента списка ---
+const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEditClick, editingTodoId, editingText, handleSaveEdit, handleCancelEdit, handleToggleFavorite }) => {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging, // Добавляем isDragging для стилизации
-  } = useSortable({ id: todo.id }); // ID элемента должно быть уникальным
+    isDragging,
+  } = useSortable({ id: todo.id });
 
-  // Стили для перетаскиваемого элемента, использующие трансформации CSS
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1, // Уменьшаем прозрачность при перетаскивании
-    zIndex: isDragging ? 100 : 'auto', // Поднимаем элемент выше при перетаскивании
-    boxShadow: isDragging ? '0 8px 15px rgba(0, 0, 0, 0.2)' : '0 2px 8px var(--todo-item-shadow)', // Тень при перетаскивании
-    // Курсор для всего элемента теперь будет default, а для ручки - grab
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 100 : 'auto',
+    boxShadow: isDragging ? '0 8px 15px rgba(0, 0, 0, 0.2)' : '0 2px 8px var(--todo-item-shadow)',
   };
 
   return (
@@ -48,9 +46,8 @@ const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEdit
       ref={setNodeRef} // Привязываем ссылку на DOM-элемент для @dnd-kit
       style={style} // Применяем стили трансформации и перехода
       id={`todo-item-${todo.id}`} // Важно: сохраняем ID для анимации удаления
-      className={`todo-item ${todo.completed ? 'completed' : ''}`}
-      data-dragging={isDragging ? "true" : "false"} // Добавляем атрибут для CSS-стилизации активного перетаскивания
-      // attributes и listeners теперь будут на drag handle, а не на li
+      className={`todo-item ${todo.completed ? 'completed' : ''} ${todo.isFavorite ? 'favorite' : ''}`} // Добавляем класс 'favorite'
+      data-dragging={isDragging ? "true" : "false"}
     >
       <input
         type="checkbox"
@@ -78,18 +75,21 @@ const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEdit
       ) : (
         // Обычный режим отображения
         <>
-          {/* Link теперь обычная ссылка для навигации.
-              Перетаскивание будет начинаться только после движения мыши на 5px. */}
           <span className="todo-text" onDoubleClick={() => handleEditClick(todo)}>
               <Link to={`/todo/${todo.id}`} className="todo-link">
                   {todo.text}
               </Link>
           </span>
-          {/* --- НОВЫЙ ЭЛЕМЕНТ: Drag Handle --- */}
+          <button
+            onClick={() => handleToggleFavorite(todo.id)} // Обработчик переключения избранного
+            className={`favorite-button ${todo.isFavorite ? 'active' : ''}`} // Динамический класс
+            type="button"
+          >
+            ⭐ {/* Звездочка для избранного */}
+          </button>
           <div className="drag-handle" {...attributes} {...listeners}>
             <span className="drag-dots">⋮</span> {/* Визуальный индикатор */}
           </div>
-          {/* --- КОНЕЦ НОВОГО ЭЛЕМЕНТА --- */}
           <Button onClick={() => handleEditClick(todo)} className="edit-todo-button" type="button">
             Редактировать
           </Button>
@@ -101,15 +101,14 @@ const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEdit
     </li>
   );
 };
-// --- Конец SortableItem ---
 
 
 const ToDoPage = () => {
-  // Инициализация состояния todos из localStorage.
   const [todos, setTodos] = useState(() => {
     try {
       const storedTodos = localStorage.getItem('todos');
-      return storedTodos ? JSON.parse(storedTodos) : [];
+      const parsedTodos = storedTodos ? JSON.parse(storedTodos) : [];
+      return parsedTodos.map(todo => ({ ...todo, isFavorite: todo.isFavorite ?? false }));
     } catch (error) {
       console.error("Failed to load todos from localStorage", error);
       return [];
@@ -121,26 +120,19 @@ const ToDoPage = () => {
   const [editingText, setEditingText] = useState('');
   const [notification, setNotification] = useState({ message: '', visible: false });
   const [filter, setFilter] = useState('all');
-  // Новое состояние для отслеживания, активно ли перетаскивание над списком
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
-  // Настраиваем сенсоры для DndContext (pointer для мыши, keyboard для клавиатуры)
-  // Убираем activationConstraint от PointerSensor, так как теперь есть drag handle
   const sensors = useSensors(
-    useSensor(PointerSensor), // PointerSensor теперь без activationConstraint
+    useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-
-  // useEffect для СОХРАНЕНИЯ в localStorage.
   useEffect(() => {
     localStorage.setItem('todos', JSON.stringify(todos));
   }, [todos]);
 
-
-  // Функция для отображения уведомлений
   const showNotification = (message) => {
     setNotification({ message, visible: true });
     setTimeout(() => {
@@ -148,8 +140,6 @@ const ToDoPage = () => {
     }, 2000);
   };
 
-
-  // Обработчик добавления новой задачи
   const handleAddTodo = () => {
     if (newTodoText.trim() === '') return;
 
@@ -157,20 +147,19 @@ const ToDoPage = () => {
       id: Date.now(),
       text: newTodoText,
       completed: false,
+      isFavorite: false,
     };
     setTodos([...todos, newTodo]);
     setNewTodoText('');
     showNotification('Задача добавлена!');
   };
 
-  // Обработчик переключения статуса задачи (выполнена/не выполнена)
   const handleToggleComplete = (id) => {
     setTodos(todos.map(todo =>
       todo.id === id ? { ...todo, completed: !todo.completed } : todo
     ));
   };
 
-  // Обработчик удаления задачи с анимацией
   const handleDeleteTodo = (idToDelete) => {
       const todoToDeleteElement = document.getElementById(`todo-item-${idToDelete}`);
 
@@ -187,7 +176,6 @@ const ToDoPage = () => {
       }
   };
 
-  // Функции для редактирования
   const handleEditClick = (todo) => {
     setEditingTodoId(todo.id);
     setEditingText(todo.text);
@@ -212,7 +200,6 @@ const ToDoPage = () => {
     setEditingText('');
   };
 
-  // Обработчик для удаления всех выполненных задач
   const handleClearCompleted = () => {
     const activeTodos = todos.filter(todo => !todo.completed);
     setTodos(activeTodos);
@@ -221,7 +208,27 @@ const ToDoPage = () => {
     }
   };
 
-  // Вычисляемые задачи для отображения в зависимости от текущего фильтра
+  const handleToggleFavorite = (id) => {
+    setTodos(prevTodos => {
+      if (!Array.isArray(prevTodos)) {
+        console.error("prevTodos is not an array:", prevTodos);
+        return [];
+      }
+
+      const updatedTodos = prevTodos.map(todo => {
+        if (todo.id === id) {
+          const newIsFavorite = !todo.isFavorite;
+          const message = newIsFavorite ? 'Добавлено в избранное!' : 'Удалено из избранного!';
+          showNotification(message);
+          return { ...todo, isFavorite: newIsFavorite };
+        }
+        return todo;
+      });
+      return updatedTodos;
+    });
+  };
+
+  // --- ОБНОВЛЕННАЯ ЛОГИКА ФИЛЬТРАЦИИ ---
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') {
       return !todo.completed;
@@ -229,22 +236,26 @@ const ToDoPage = () => {
     if (filter === 'completed') {
       return todo.completed;
     }
-    return true;
+    if (filter === 'favorites') { // НОВЫЙ ФИЛЬТР: только избранные задачи
+      return todo.isFavorite;
+    }
+    return true; // filter === 'all'
   });
+  // --- КОНЕЦ ОБНОВЛЕННОЙ ЛОГИКИ ФИЛЬТРАЦИИ ---
 
-  // --- Обработчик завершения перетаскивания для @dnd-kit ---
   function handleDragEnd(event) {
     const {active, over} = event;
 
-    // Сбрасываем состояние isDraggingOver
     setIsDraggingOver(false);
+
+    if (!over) {
+      return;
+    }
 
     if (active.id !== over.id) {
       setTodos((items) => {
-        // Находим старый и новый индексы элементов
         const oldIndex = items.findIndex(item => item.id === active.id);
         const newIndex = items.findIndex(item => item.id === over.id);
-        // arrayMove - утилита из @dnd-kit/sortable для переупорядочивания массива
         return arrayMove(items, oldIndex, newIndex);
       });
     }
@@ -295,6 +306,15 @@ const ToDoPage = () => {
         >
           Выполненные
         </Button>
+        {/* --- НОВАЯ КНОПКА ФИЛЬТРА: Избранное --- */}
+        <Button
+          onClick={() => setFilter('favorites')}
+          className={filter === 'favorites' ? 'filter-button active' : 'filter-button'}
+          type="button"
+        >
+          Избранное ⭐
+        </Button>
+        {/* --- КОНЕЦ НОВОЙ КНОПКИ --- */}
       </div>
 
       {todos.length > 0 && (
@@ -305,23 +325,20 @@ const ToDoPage = () => {
         </div>
       )}
 
-      {/* --- DndContext для включения перетаскивания с @dnd-kit --- */}
       <DndContext
-        sensors={sensors} // Привязываем сенсоры (мышь, клавиатура)
-        collisionDetection={closestCenter} // Стратегия определения столкновений элементов
-        onDragEnd={handleDragEnd} // Обработчик завершения перетаскивания
-        onDragStart={() => setIsDraggingOver(true)} // Устанавливаем true при начале перетаскивания
-        onDragCancel={() => setIsDraggingOver(false)} // Устанавливаем false при отмене перетаскивания
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        onDragStart={() => setIsDraggingOver(true)}
+        onDragCancel={() => setIsDraggingOver(false)}
       >
-        {/* SortableContext: предоставляет контекст для сортируемых элементов */}
-        {/* items: массив ID элементов, которые можно сортировать */}
         <SortableContext
-          items={filteredTodos.map(todo => todo.id)} // Передаем ID отфильтрованных задач
-          strategy={null} // Можно использовать defaultAnimateLayoutChanges или другие стратегии
+          items={filteredTodos.map(todo => todo.id)}
+          strategy={verticalListSortingStrategy}
         >
           <ul
             className="todo-list"
-            data-drop-active={isDraggingOver ? "true" : "false"} // Добавляем атрибут для CSS-стилизации области бросания
+            data-drop-active={isDraggingOver ? "true" : "false"}
           >
             {filteredTodos.length === 0 && filter === 'all' ? (
               <p className="no-todos">Задач пока нет. Добавьте первую!</p>
@@ -329,8 +346,9 @@ const ToDoPage = () => {
               <p className="no-todos">Активных задач пока нет.</p>
             ) : filteredTodos.length === 0 && filter === 'completed' ? (
               <p className="no-todos">Выполненных задач пока нет.</p>
+            ) : filteredTodos.length === 0 && filter === 'favorites' ? ( /* НОВОЕ сообщение для избранных */
+              <p className="no-todos">Избранных задач пока нет.</p>
             ) : (
-              // Отображаем каждый элемент как SortableItem
               filteredTodos.map(todo => (
                 <SortableItem
                   key={todo.id}
@@ -342,6 +360,7 @@ const ToDoPage = () => {
                   editingText={editingText}
                   handleSaveEdit={handleSaveEdit}
                   handleCancelEdit={handleCancelEdit}
+                  handleToggleFavorite={handleToggleFavorite}
                 />
               ))
             )}
