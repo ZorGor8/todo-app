@@ -121,6 +121,7 @@ const ToDoPage = () => {
   const [notification, setNotification] = useState({ message: '', visible: false });
   const [filter, setFilter] = useState('all');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(''); // Состояние для поискового запроса
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -228,20 +229,27 @@ const ToDoPage = () => {
     });
   };
 
-  // --- ОБНОВЛЕННАЯ ЛОГИКА ФИЛЬТРАЦИИ ---
-  const filteredTodos = todos.filter(todo => {
+  // --- НОВАЯ ФУНКЦИЯ: Очистка поискового запроса ---
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
+  // --- КОНЕЦ НОВОЙ ФУНКЦИИ ---
+
+  // Логика фильтрации и поиска
+  const filteredAndSearchedTodos = todos.filter(todo => {
+    let matchesFilter = true;
     if (filter === 'active') {
-      return !todo.completed;
+      matchesFilter = !todo.completed;
+    } else if (filter === 'completed') {
+      matchesFilter = todo.completed;
+    } else if (filter === 'favorites') {
+      matchesFilter = todo.isFavorite;
     }
-    if (filter === 'completed') {
-      return todo.completed;
-    }
-    if (filter === 'favorites') { // НОВЫЙ ФИЛЬТР: только избранные задачи
-      return todo.isFavorite;
-    }
-    return true; // filter === 'all'
+
+    const matchesSearch = todo.text.toLowerCase().includes(searchTerm.toLowerCase());
+
+    return matchesFilter && matchesSearch;
   });
-  // --- КОНЕЦ ОБНОВЛЕННОЙ ЛОГИКИ ФИЛЬТРАЦИИ ---
 
   function handleDragEnd(event) {
     const {active, over} = event;
@@ -284,6 +292,22 @@ const ToDoPage = () => {
         </Button>
       </div>
 
+      {/* --- ОБНОВЛЕННАЯ Секция поиска с кнопкой очистки --- */}
+      <div className="search-section">
+        <Input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Поиск задач..."
+          className="search-input"
+        />
+        {searchTerm && ( // Показываем кнопку только если есть текст в поиске
+          <Button onClick={handleClearSearch} className="clear-search-button" type="button">
+            Очистить поиск
+          </Button>
+        )}
+      </div>
+      {/* --- КОНЕЦ ОБНОВЛЕННОЙ СЕКЦИИ ПОИСКА --- */}
+
       <div className="filter-buttons">
         <Button
           onClick={() => setFilter('all')}
@@ -306,7 +330,6 @@ const ToDoPage = () => {
         >
           Выполненные
         </Button>
-        {/* --- НОВАЯ КНОПКА ФИЛЬТРА: Избранное --- */}
         <Button
           onClick={() => setFilter('favorites')}
           className={filter === 'favorites' ? 'filter-button active' : 'filter-button'}
@@ -314,7 +337,6 @@ const ToDoPage = () => {
         >
           Избранное ⭐
         </Button>
-        {/* --- КОНЕЦ НОВОЙ КНОПКИ --- */}
       </div>
 
       {todos.length > 0 && (
@@ -333,23 +355,27 @@ const ToDoPage = () => {
         onDragCancel={() => setIsDraggingOver(false)}
       >
         <SortableContext
-          items={filteredTodos.map(todo => todo.id)}
+          items={filteredAndSearchedTodos.map(todo => todo.id)}
           strategy={verticalListSortingStrategy}
         >
           <ul
             className="todo-list"
             data-drop-active={isDraggingOver ? "true" : "false"}
           >
-            {filteredTodos.length === 0 && filter === 'all' ? (
-              <p className="no-todos">Задач пока нет. Добавьте первую!</p>
-            ) : filteredTodos.length === 0 && filter === 'active' ? (
-              <p className="no-todos">Активных задач пока нет.</p>
-            ) : filteredTodos.length === 0 && filter === 'completed' ? (
-              <p className="no-todos">Выполненных задач пока нет.</p>
-            ) : filteredTodos.length === 0 && filter === 'favorites' ? ( /* НОВОЕ сообщение для избранных */
-              <p className="no-todos">Избранных задач пока нет.</p>
+            {filteredAndSearchedTodos.length === 0 ? (
+              searchTerm === '' && filter === 'all' ? (
+                <p className="no-todos">Задач пока нет. Добавьте первую!</p>
+              ) : searchTerm !== '' ? (
+                <p className="no-todos">По запросу "{searchTerm}" ничего не найдено.</p>
+              ) : filter === 'active' ? (
+                <p className="no-todos">Активных задач пока нет.</p>
+              ) : filter === 'completed' ? (
+                <p className="no-todos">Выполненных задач пока нет.</p>
+              ) : filter === 'favorites' ? (
+                <p className="no-todos">Избранных задач пока нет.</p>
+              ) : null
             ) : (
-              filteredTodos.map(todo => (
+              filteredAndSearchedTodos.map(todo => (
                 <SortableItem
                   key={todo.id}
                   todo={todo}

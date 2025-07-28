@@ -360,8 +360,73 @@ body.dark .todo-item.favorite {
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
 }
 
+/* Стили для секции поиска */
+.search-section {
+  margin-bottom: 20px;
+}
 
+.search-input {
+  width: 100%; /* Занимает всю доступную ширину */
+  padding: 12px 15px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.2s;
+  background-color: var(--input-bg);
+  color: var(--input-text-color);
+  box-sizing: border-box; /* Учитывает padding и border в ширине */
+}
 
+.search-input:focus {
+  border-color: var(--button-primary-bg);
+}
+
+/* src/pages/ToDoPage.css */
+
+/* ... все ваши предыдущие стили ... */
+
+/* ОБНОВЛЕННЫЕ Стили для секции поиска */
+.search-section {
+  margin-bottom: 20px;
+  display: flex; /* Используем flexbox для выравнивания инпута и кнопки */
+  gap: 10px; /* Промежуток между инпутом и кнопкой */
+  align-items: center; /* Выравнивание по центру по вертикали */
+}
+
+.search-input {
+  flex-grow: 1; /* Инпут займет все доступное пространство */
+  padding: 12px 15px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.2s;
+  background-color: var(--input-bg);
+  color: var(--input-text-color);
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  border-color: var(--button-primary-bg);
+}
+
+/* Стили для кнопки очистки поиска */
+.clear-search-button {
+  padding: 12px 15px;
+  background-color: var(--button-cancel-bg); /* Используем цвет отмены, или можно выбрать другой */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+  white-space: nowrap; /* Предотвращает перенос текста кнопки */
+}
+
+.clear-search-button:hover {
+  background-color: var(--button-cancel-hover-bg);
+}
 
 
 
