@@ -363,32 +363,6 @@ body.dark .todo-item.favorite {
 /* Стили для секции поиска */
 .search-section {
   margin-bottom: 20px;
-}
-
-.search-input {
-  width: 100%; /* Занимает всю доступную ширину */
-  padding: 12px 15px;
-  border: 1px solid var(--input-border);
-  border-radius: 8px;
-  font-size: 1em;
-  outline: none;
-  transition: border-color 0.2s;
-  background-color: var(--input-bg);
-  color: var(--input-text-color);
-  box-sizing: border-box; /* Учитывает padding и border в ширине */
-}
-
-.search-input:focus {
-  border-color: var(--button-primary-bg);
-}
-
-/* src/pages/ToDoPage.css */
-
-/* ... все ваши предыдущие стили ... */
-
-/* ОБНОВЛЕННЫЕ Стили для секции поиска */
-.search-section {
-  margin-bottom: 20px;
   display: flex; /* Используем flexbox для выравнивания инпута и кнопки */
   gap: 10px; /* Промежуток между инпутом и кнопкой */
   align-items: center; /* Выравнивание по центру по вертикали */
@@ -428,8 +402,35 @@ body.dark .todo-item.favorite {
   background-color: var(--button-cancel-hover-bg);
 }
 
+/* НОВЫЕ СТИЛИ ДЛЯ СПИННЕРА ЗАГРУЗКИ */
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--text-color);
+}
 
+.loading-spinner {
+  border: 4px solid var(--input-border); /* Светлый круг */
+  border-top: 4px solid var(--button-primary-bg); /* Цветная часть */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite; /* Анимация вращения */
+  margin-bottom: 10px;
+}
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-message {
+  font-size: 1.1em;
+  color: var(--text-color);
+}
 
 
 

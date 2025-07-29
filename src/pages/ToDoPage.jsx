@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
+// Импортируем компоненты Input и Button, которые уже есть
 import Input from '../components/Input';
 import Button from '../components/Button';
-import './ToDoPage.css';
+// Импортируем новые рефакторинговые компоненты
+import Notification from '../components/Notification';
+import FilterButtons from '../components/FilterButtons';
+import LoadingSpinner from '../components/LoadingSpinner';
+
+import './ToDoPage.css'; // Стили остаются здесь, так как они общие для страницы и её подкомпонентов
 import { Link } from 'react-router-dom';
 
 // Импортируем необходимые компоненты из @dnd-kit
@@ -23,7 +29,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'; // Для трансформаций CSS
 
 // --- Компонент SortableItem для каждого элемента списка ---
-const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEditClick, editingTodoId, editingText, handleSaveEdit, handleCancelEdit, handleToggleFavorite }) => {
+const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEditClick, editingTodoId, editingText, handleSaveEdit, handleCancelEdit, handleToggleFavorite, setEditingText }) => {
   const {
     attributes,
     listeners,
@@ -104,24 +110,15 @@ const SortableItem = ({ todo, handleToggleComplete, handleDeleteTodo, handleEdit
 
 
 const ToDoPage = () => {
-  const [todos, setTodos] = useState(() => {
-    try {
-      const storedTodos = localStorage.getItem('todos');
-      const parsedTodos = storedTodos ? JSON.parse(storedTodos) : [];
-      return parsedTodos.map(todo => ({ ...todo, isFavorite: todo.isFavorite ?? false }));
-    } catch (error) {
-      console.error("Failed to load todos from localStorage", error);
-      return [];
-    }
-  });
-
+  const [todos, setTodos] = useState([]); // Инициализируем пустым массивом
   const [newTodoText, setNewTodoText] = useState('');
   const [editingTodoId, setEditingTodoId] = useState(null);
   const [editingText, setEditingText] = useState('');
   const [notification, setNotification] = useState({ message: '', visible: false });
   const [filter, setFilter] = useState('all');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(''); // Состояние для поискового запроса
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true); // Состояние загрузки
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -131,8 +128,28 @@ const ToDoPage = () => {
   );
 
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
+    // Имитация загрузки из localStorage
+    setIsLoading(true); // Начинаем загрузку
+    setTimeout(() => {
+      try {
+        const storedTodos = localStorage.getItem('todos');
+        const parsedTodos = storedTodos ? JSON.parse(storedTodos) : [];
+        setTodos(parsedTodos.map(todo => ({ ...todo, isFavorite: todo.isFavorite ?? false })));
+      } catch (error) {
+        console.error("Failed to load todos from localStorage", error);
+        setTodos([]);
+      } finally {
+        setIsLoading(false); // Завершаем загрузку
+      }
+    }, 500); // Имитация задержки в 500мс
+  }, []);
+
+  useEffect(() => {
+    // Сохраняем в localStorage только когда isLoading завершился
+    if (!isLoading) {
+      localStorage.setItem('todos', JSON.stringify(todos));
+    }
+  }, [todos, isLoading]); // Добавляем isLoading в зависимости
 
   const showNotification = (message) => {
     setNotification({ message, visible: true });
@@ -144,36 +161,49 @@ const ToDoPage = () => {
   const handleAddTodo = () => {
     if (newTodoText.trim() === '') return;
 
-    const newTodo = {
-      id: Date.now(),
-      text: newTodoText,
-      completed: false,
-      isFavorite: false,
-    };
-    setTodos([...todos, newTodo]);
-    setNewTodoText('');
-    showNotification('Задача добавлена!');
+    setIsLoading(true); // Начинаем загрузку
+    setTimeout(() => {
+      const newTodo = {
+        id: Date.now(),
+        text: newTodoText,
+        completed: false,
+        isFavorite: false,
+      };
+      setTodos(prevTodos => [...prevTodos, newTodo]);
+      setNewTodoText('');
+      showNotification('Задача добавлена!');
+      setIsLoading(false); // Завершаем загрузку
+    }, 300); // Имитация задержки
   };
 
   const handleToggleComplete = (id) => {
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+    setIsLoading(true); // Начинаем загрузку
+    setTimeout(() => {
+      setTodos(prevTodos => prevTodos.map(todo =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      ));
+      setIsLoading(false); // Завершаем загрузку
+    }, 150); // Имитация задержки
   };
 
   const handleDeleteTodo = (idToDelete) => {
       const todoToDeleteElement = document.getElementById(`todo-item-${idToDelete}`);
 
+      setIsLoading(true); // Начинаем загрузку
       if (todoToDeleteElement) {
           todoToDeleteElement.classList.add('fade-out');
 
           setTimeout(() => {
-              setTodos(todos.filter(todo => todo.id !== idToDelete));
+              setTodos(prevTodos => prevTodos.filter(todo => todo.id !== idToDelete));
               showNotification('Задача удалена!');
-          }, 300);
+              setIsLoading(false); // Завершаем загрузку
+          }, 300); // Имитация задержки
       } else {
-          setTodos(todos.filter(todo => todo.id !== idToDelete));
-          showNotification('Задача удалена!');
+          setTimeout(() => {
+              setTodos(prevTodos => prevTodos.filter(todo => todo.id !== idToDelete));
+              showNotification('Задача удалена!');
+              setIsLoading(false); // Завершаем загрузку
+          }, 300); // Имитация задержки
       }
   };
 
@@ -183,17 +213,22 @@ const ToDoPage = () => {
   };
 
   const handleSaveEdit = (id) => {
+    console.log("Saving todo with ID:", id, "New text (before update):", editingText);
+
     if (editingText.trim() === '') {
-      handleDeleteTodo(id);
-      showNotification('Задача удалена (пустой текст)!');
+      handleDeleteTodo(id); // Удаляем, если текст пустой
       return;
     }
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, text: editingText } : todo
-    ));
-    setEditingTodoId(null);
-    setEditingText('');
-    showNotification('Задача обновлена!');
+    setIsLoading(true); // Начинаем загрузку
+    setTimeout(() => {
+      setTodos(prevTodos => prevTodos.map(todo =>
+        todo.id === id ? { ...todo, text: editingText } : todo
+      ));
+      setEditingTodoId(null);
+      setEditingText('');
+      showNotification('Задача обновлена!');
+      setIsLoading(false); // Завершаем загрузку
+    }, 300); // Имитация задержки
   };
 
   const handleCancelEdit = () => {
@@ -202,38 +237,45 @@ const ToDoPage = () => {
   };
 
   const handleClearCompleted = () => {
-    const activeTodos = todos.filter(todo => !todo.completed);
-    setTodos(activeTodos);
-    if (todos.length > activeTodos.length) {
-      showNotification('Выполненные задачи очищены!');
-    }
+    setIsLoading(true); // Начинаем загрузку
+    setTimeout(() => {
+      const activeTodos = todos.filter(todo => !todo.completed);
+      if (todos.length > activeTodos.length) {
+        setTodos(activeTodos);
+        showNotification('Выполненные задачи очищены!');
+      }
+      setIsLoading(false); // Завершаем загрузку
+    }, 300); // Имитация задержки
   };
 
   const handleToggleFavorite = (id) => {
-    setTodos(prevTodos => {
-      if (!Array.isArray(prevTodos)) {
-        console.error("prevTodos is not an array:", prevTodos);
-        return [];
-      }
-
-      const updatedTodos = prevTodos.map(todo => {
-        if (todo.id === id) {
-          const newIsFavorite = !todo.isFavorite;
-          const message = newIsFavorite ? 'Добавлено в избранное!' : 'Удалено из избранного!';
-          showNotification(message);
-          return { ...todo, isFavorite: newIsFavorite };
+    setIsLoading(true); // Начинаем загрузку
+    setTimeout(() => {
+      setTodos(prevTodos => {
+        if (!Array.isArray(prevTodos)) {
+          console.error("prevTodos is not an array:", prevTodos);
+          setIsLoading(false); // Завершаем загрузку в случае ошибки
+          return [];
         }
-        return todo;
+
+        const updatedTodos = prevTodos.map(todo => {
+          if (todo.id === id) {
+            const newIsFavorite = !todo.isFavorite;
+            const message = newIsFavorite ? 'Добавлено в избранное!' : 'Удалено из избранного!';
+            showNotification(message);
+            return { ...todo, isFavorite: newIsFavorite };
+          }
+          return todo;
+        });
+        setIsLoading(false); // Завершаем загрузку
+        return updatedTodos;
       });
-      return updatedTodos;
-    });
+    }, 150); // Имитация задержки
   };
 
-  // --- НОВАЯ ФУНКЦИЯ: Очистка поискового запроса ---
   const handleClearSearch = () => {
     setSearchTerm('');
   };
-  // --- КОНЕЦ НОВОЙ ФУНКЦИИ ---
 
   // Логика фильтрации и поиска
   const filteredAndSearchedTodos = todos.filter(todo => {
@@ -261,6 +303,7 @@ const ToDoPage = () => {
     }
 
     if (active.id !== over.id) {
+      // Здесь не имитируем загрузку, так как DndContext уже управляет визуальным состоянием
       setTodos((items) => {
         const oldIndex = items.findIndex(item => item.id === active.id);
         const newIndex = items.findIndex(item => item.id === over.id);
@@ -274,11 +317,8 @@ const ToDoPage = () => {
     <div className="todo-container">
       <h1>Мой Список Дел</h1>
 
-      {notification.visible && (
-        <div className="notification">
-          {notification.message}
-        </div>
-      )}
+      {/* Используем компонент Notification */}
+      <Notification message={notification.message} visible={notification.visible} />
 
       <div className="todo-input-section">
         <Input
@@ -286,62 +326,34 @@ const ToDoPage = () => {
           onChange={(e) => setNewTodoText(e.target.value)}
           placeholder="Добавить новую задачу..."
           className="todo-input"
+          disabled={isLoading}
         />
-        <Button onClick={handleAddTodo} className="add-todo-button" type="button">
+        <Button onClick={handleAddTodo} className="add-todo-button" type="button" disabled={isLoading}>
           Добавить
         </Button>
       </div>
 
-      {/* --- ОБНОВЛЕННАЯ Секция поиска с кнопкой очистки --- */}
       <div className="search-section">
         <Input
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Поиск задач..."
           className="search-input"
+          disabled={isLoading}
         />
-        {searchTerm && ( // Показываем кнопку только если есть текст в поиске
-          <Button onClick={handleClearSearch} className="clear-search-button" type="button">
+        {searchTerm && (
+          <Button onClick={handleClearSearch} className="clear-search-button" type="button" disabled={isLoading}>
             Очистить поиск
           </Button>
         )}
       </div>
-      {/* --- КОНЕЦ ОБНОВЛЕННОЙ СЕКЦИИ ПОИСКА --- */}
 
-      <div className="filter-buttons">
-        <Button
-          onClick={() => setFilter('all')}
-          className={filter === 'all' ? 'filter-button active' : 'filter-button'}
-          type="button"
-        >
-          Все
-        </Button>
-        <Button
-          onClick={() => setFilter('active')}
-          className={filter === 'active' ? 'filter-button active' : 'filter-button'}
-          type="button"
-        >
-          Активные
-        </Button>
-        <Button
-          onClick={() => setFilter('completed')}
-          className={filter === 'completed' ? 'filter-button active' : 'filter-button'}
-          type="button"
-        >
-          Выполненные
-        </Button>
-        <Button
-          onClick={() => setFilter('favorites')}
-          className={filter === 'favorites' ? 'filter-button active' : 'filter-button'}
-          type="button"
-        >
-          Избранное ⭐
-        </Button>
-      </div>
+      {/* Используем компонент FilterButtons */}
+      <FilterButtons filter={filter} setFilter={setFilter} isLoading={isLoading} />
 
       {todos.length > 0 && (
         <div className="clear-completed-section">
-          <Button onClick={handleClearCompleted} className="clear-completed-button" type="button">
+          <Button onClick={handleClearCompleted} className="clear-completed-button" type="button" disabled={isLoading}>
             Очистить завершенные
           </Button>
         </div>
@@ -362,33 +374,39 @@ const ToDoPage = () => {
             className="todo-list"
             data-drop-active={isDraggingOver ? "true" : "false"}
           >
-            {filteredAndSearchedTodos.length === 0 ? (
-              searchTerm === '' && filter === 'all' ? (
-                <p className="no-todos">Задач пока нет. Добавьте первую!</p>
-              ) : searchTerm !== '' ? (
-                <p className="no-todos">По запросу "{searchTerm}" ничего не найдено.</p>
-              ) : filter === 'active' ? (
-                <p className="no-todos">Активных задач пока нет.</p>
-              ) : filter === 'completed' ? (
-                <p className="no-todos">Выполненных задач пока нет.</p>
-              ) : filter === 'favorites' ? (
-                <p className="no-todos">Избранных задач пока нет.</p>
-              ) : null
+            {/* Используем компонент LoadingSpinner */}
+            {isLoading ? (
+              <LoadingSpinner message="Загрузка задач..." />
             ) : (
-              filteredAndSearchedTodos.map(todo => (
-                <SortableItem
-                  key={todo.id}
-                  todo={todo}
-                  handleToggleComplete={handleToggleComplete}
-                  handleDeleteTodo={handleDeleteTodo}
-                  handleEditClick={handleEditClick}
-                  editingTodoId={editingTodoId}
-                  editingText={editingText}
-                  handleSaveEdit={handleSaveEdit}
-                  handleCancelEdit={handleCancelEdit}
-                  handleToggleFavorite={handleToggleFavorite}
-                />
-              ))
+              filteredAndSearchedTodos.length === 0 ? (
+                searchTerm === '' && filter === 'all' ? (
+                  <p className="no-todos">Задач пока нет. Добавьте первую!</p>
+                ) : searchTerm !== '' ? (
+                  <p className="no-todos">По запросу "{searchTerm}" ничего не найдено.</p>
+                ) : filter === 'active' ? (
+                  <p className="no-todos">Активных задач пока нет.</p>
+                ) : filter === 'completed' ? (
+                  <p className="no-todos">Выполненных задач пока нет.</p>
+                ) : filter === 'favorites' ? (
+                  <p className="no-todos">Избранных задач пока нет.</p>
+                ) : null
+              ) : (
+                filteredAndSearchedTodos.map(todo => (
+                  <SortableItem
+                    key={todo.id}
+                    todo={todo}
+                    handleToggleComplete={handleToggleComplete}
+                    handleDeleteTodo={handleDeleteTodo}
+                    handleEditClick={handleEditClick}
+                    editingTodoId={editingTodoId}
+                    editingText={editingText}
+                    handleSaveEdit={handleSaveEdit}
+                    handleCancelEdit={handleCancelEdit}
+                    handleToggleFavorite={handleToggleFavorite}
+                    setEditingText={setEditingText}
+                  />
+                ))
+              )
             )}
           </ul>
         </SortableContext>
@@ -398,3 +416,4 @@ const ToDoPage = () => {
 };
 
 export default ToDoPage;
+

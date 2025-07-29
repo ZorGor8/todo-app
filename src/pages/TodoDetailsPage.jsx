@@ -5,24 +5,41 @@ const TodoDetailsPage = () => {
   const { id } = useParams(); // Получаем ID задачи из URL
   const navigate = useNavigate(); // Хук для программной навигации (например, кнопка "Назад")
   const [todo, setTodo] = useState(null); // Состояние для хранения деталей найденной задачи
+  const [isLoading, setIsLoading] = useState(true); // Состояние загрузки для страницы деталей
 
   useEffect(() => {
-    try {
-      const storedTodos = localStorage.getItem('todos');
-      const todos = storedTodos ? JSON.parse(storedTodos) : [];
-      // Ищем задачу по ID. Преобразуем id из URL в строку для сравнения, так как t.id - число.
-      const foundTodo = todos.find(t => String(t.id) === id);
-      setTodo(foundTodo); // Устанавливаем найденную задачу в состояние
-    } catch (error) {
-      console.error("Failed to load todo details from localStorage", error);
-      setTodo(null); // В случае ошибки или если задача не найдена
-    }
+    setIsLoading(true); // Начинаем загрузку
+    setTimeout(() => { // Имитация асинхронной загрузки
+      try {
+        const storedTodos = localStorage.getItem('todos');
+        const todos = storedTodos ? JSON.parse(storedTodos) : [];
+        // Ищем задачу по ID. Преобразуем id из URL в строку для сравнения, так как t.id - число.
+        const foundTodo = todos.find(t => String(t.id) === id);
+        setTodo(foundTodo); // Устанавливаем найденную задачу в состояние
+      } catch (error) {
+        console.error("Failed to load todo details from localStorage", error);
+        setTodo(null); // В случае ошибки или если задача не найдена
+      } finally {
+        setIsLoading(false); // Завершаем загрузку
+      }
+    }, 300); // Имитация задержки в 300мс
   }, [id]); // Зависимость от id из URL: эффект перезапускается при изменении ID
 
   // Обработчик для кнопки "Вернуться назад"
   const handleBackClick = () => {
     navigate(-1); // Возвращаемся на предыдущую страницу в истории браузера
   };
+
+  if (isLoading) { // Показываем спиннер во время загрузки
+    return (
+      <div className="todo-details-container">
+        <div className="loading-spinner-container">
+          <div className="loading-spinner"></div>
+          <p className="loading-message">Загрузка деталей задачи...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Если задача не найдена (todo === null), отображаем сообщение об ошибке
   if (!todo) {
